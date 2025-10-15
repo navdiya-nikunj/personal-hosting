@@ -50,7 +50,7 @@ export default function DocumentCard({ name, slug, created }: DocumentCardProps)
           <p className="text-gray-400 text-sm mb-4">
             Created: {new Date(created).toLocaleString()}
           </p>
-          <div className="flex gap-3">
+          <div className="flex gap-3 flex-wrap">
             <Link
               href={`/view/${slug}`}
               target="_blank"
@@ -64,6 +64,12 @@ export default function DocumentCard({ name, slug, created }: DocumentCardProps)
             >
               {copied ? '✓ Copied!' : 'Copy Link'}
             </button>
+            <Link
+              href={`/edit/${slug}`}
+              className="bg-yellow-500/20 text-yellow-300 px-4 py-2 rounded-lg font-medium hover:bg-yellow-500/30 transition-colors border border-yellow-500/30"
+            >
+              Edit
+            </Link>
             <button
               onClick={handleDelete}
               className="bg-red-500/20 text-red-300 px-4 py-2 rounded-lg font-medium hover:bg-red-500/30 transition-colors border border-red-500/30"

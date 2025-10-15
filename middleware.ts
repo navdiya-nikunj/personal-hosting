@@ -6,7 +6,7 @@ const secret = new TextEncoder().encode(
   process.env.AUTH_SECRET || 'fallback-secret-minimum-32-characters-long'
 );
 
-const protectedRoutes = ['/dashboard', '/upload', '/api/documents/upload', '/api/documents/delete'];
+const protectedRoutes = ['/dashboard', '/upload', '/edit', '/api/documents/upload', '/api/documents/delete', '/api/documents/update', '/api/documents/get'];
 const authRoutes = ['/login'];
 
 export async function middleware(request: NextRequest) {

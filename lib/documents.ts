@@ -64,6 +64,32 @@ export async function saveDocument(title: string, content: string): Promise<stri
   return slug;
 }
 
+export async function updateDocument(oldSlug: string, title: string, content: string): Promise<string> {
+  await fs.mkdir(DOCUMENTS_DIR, { recursive: true });
+  
+  const newSlug = title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+  
+  const oldFilePath = path.join(DOCUMENTS_DIR, `${oldSlug}.html`);
+  const newFilePath = path.join(DOCUMENTS_DIR, `${newSlug}.html`);
+  
+  // Write the updated content
+  await fs.writeFile(newFilePath, content, 'utf-8');
+  
+  // If the slug changed (title changed), delete the old file
+  if (oldSlug !== newSlug) {
+    try {
+      await fs.unlink(oldFilePath);
+    } catch (error) {
+      console.error('Error deleting old document:', error);
+    }
+  }
+  
+  return newSlug;
+}
+
 export async function deleteDocument(slug: string): Promise<boolean> {
   try {
     const filePath = path.join(DOCUMENTS_DIR, `${slug}.html`);

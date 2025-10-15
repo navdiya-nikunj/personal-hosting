@@ -7,6 +7,7 @@ A modern Next.js web application for hosting and sharing static HTML, CSS, and J
 - 🔐 **Secure Authentication**: Protected dashboard and upload routes with JWT-based auth
 - 📤 **Easy Upload**: Paste your HTML/CSS/JS code and get an instant shareable link
 - 👁️ **Live Preview**: Real-time preview with split, editor, and preview modes
+- ✏️ **Edit Documents**: Edit your uploaded documents with live preview
 - 📊 **Dashboard**: Manage all your hosted documents from one central location
 - 🔗 **Simple Sharing**: Each document gets a unique URL for easy sharing (no auth required)
 - 🗑️ **Document Management**: Delete documents you no longer need
@@ -61,11 +62,17 @@ npm run dev
    - Click "View Document" to see the rendered page (opens in new tab)
    - Click "Copy Link" to share the document URL
 
-4. **Share Documents**:
+4. **Edit Documents**:
+   - From the Dashboard, click "Edit" on any document
+   - Modify the title or content with live preview
+   - Click "Save Changes" to update the document
+   - If the title changes, the URL slug will be updated automatically
+
+5. **Share Documents**:
    - Shared document links (`/view/[slug]`) are publicly accessible
    - No authentication required for viewing shared documents
 
-5. **Delete Documents**:
+6. **Delete Documents**:
    - From the Dashboard, click "Delete" on any document
    - Confirm the deletion
 
@@ -77,14 +84,17 @@ app/
 ├── login/page.tsx        # Login page
 ├── dashboard/page.tsx    # Dashboard to view all documents
 ├── upload/page.tsx       # Upload new documents with live preview
+├── edit/[slug]/page.tsx  # Edit existing documents with live preview
 ├── view/[slug]/page.tsx  # View individual documents (public)
 └── api/
     ├── auth/
-    │   ├── login/route.ts   # Login API endpoint
-    │   └── logout/route.ts  # Logout API endpoint
+    │   ├── login/route.ts     # Login API endpoint
+    │   └── logout/route.ts    # Logout API endpoint
     └── documents/
-        ├── upload/route.ts  # Upload API endpoint
-        └── delete/route.ts  # Delete API endpoint
+        ├── upload/route.ts    # Upload API endpoint
+        ├── update/route.ts    # Update API endpoint
+        ├── get/[slug]/route.ts # Get document content API endpoint
+        └── delete/route.ts    # Delete API endpoint
 lib/
 ├── auth.ts               # Authentication utilities
 └── documents.ts          # Document management utilities
