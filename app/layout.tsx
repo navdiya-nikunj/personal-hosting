@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Suspense } from "react";
+import { Analytics } from "@vercel/analytics/next"
 
 export const metadata: Metadata = {
   title: "Document Hosting Platform",
@@ -20,6 +21,7 @@ export default function RootLayout({
       <body className="antialiased">
         <Suspense fallback={<div>Loading...</div>}> 
         {children}
+        <Analytics />
         </Suspense>
       </body>
     </html>
