@@ -1,38 +1,26 @@
-import fs from 'fs/promises';
-import path from 'path';
+import dbConnect from './mongodb';
+import DocumentModel, { IDocument } from './models/Document';
 
 export interface Document {
   name: string;
   slug: string;
   created: string;
-  path: string;
+  content?: string;
 }
-
-const DOCUMENTS_DIR = path.join(process.cwd(), 'public', 'documents');
 
 export async function getDocuments(): Promise<Document[]> {
   try {
-    await fs.mkdir(DOCUMENTS_DIR, { recursive: true });
-    const files = await fs.readdir(DOCUMENTS_DIR);
+    await dbConnect();
+    const documents = await DocumentModel.find({})
+      .sort({ created: -1 })
+      .lean();
     
-    const documents = await Promise.all(
-      files
-        .filter(file => file.endsWith('.html'))
-        .map(async (file) => {
-          const filePath = path.join(DOCUMENTS_DIR, file);
-          const stats = await fs.stat(filePath);
-          const slug = file.replace('.html', '');
-          
-          return {
-            name: slug.replace(/-/g, ' ').replace(/^\w/, c => c.toUpperCase()),
-            slug,
-            created: stats.birthtime.toISOString(),
-            path: filePath,
-          };
-        })
-    );
-
-    return documents.sort((a, b) => new Date(b.created).getTime() - new Date(a.created).getTime());
+    return documents.map(doc => ({
+      name: doc.title,
+      slug: doc.slug,
+      created: doc.created.toISOString(),
+      content: doc.content,
+    }));
   } catch (error) {
     console.error('Error reading documents:', error);
     return [];
@@ -41,9 +29,9 @@ export async function getDocuments(): Promise<Document[]> {
 
 export async function getDocument(slug: string): Promise<string | null> {
   try {
-    const filePath = path.join(DOCUMENTS_DIR, `${slug}.html`);
-    const content = await fs.readFile(filePath, 'utf-8');
-    return content;
+    await dbConnect();
+    const document = await DocumentModel.findOne({ slug }) as IDocument | null;
+    return document ? document.content : null;
   } catch (error) {
     console.error('Error reading document:', error);
     return null;
@@ -51,39 +39,53 @@ export async function getDocument(slug: string): Promise<string | null> {
 }
 
 export async function saveDocument(title: string, content: string): Promise<string> {
-  await fs.mkdir(DOCUMENTS_DIR, { recursive: true });
+  await dbConnect();
   
   const slug = title
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '');
   
-  const filePath = path.join(DOCUMENTS_DIR, `${slug}.html`);
-  await fs.writeFile(filePath, content, 'utf-8');
+  const document = new DocumentModel({
+    title,
+    slug,
+    content,
+    created: new Date(),
+  });
   
+  await document.save();
   return slug;
 }
 
 export async function updateDocument(oldSlug: string, title: string, content: string): Promise<string> {
-  await fs.mkdir(DOCUMENTS_DIR, { recursive: true });
+  await dbConnect();
   
   const newSlug = title
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '');
   
-  const oldFilePath = path.join(DOCUMENTS_DIR, `${oldSlug}.html`);
-  const newFilePath = path.join(DOCUMENTS_DIR, `${newSlug}.html`);
+  const document = await DocumentModel.findOne({ slug: oldSlug });
   
-  // Write the updated content
-  await fs.writeFile(newFilePath, content, 'utf-8');
+  if (!document) {
+    // If document doesn't exist, create a new one
+    return saveDocument(title, content);
+  }
   
-  // If the slug changed (title changed), delete the old file
-  if (oldSlug !== newSlug) {
+  // Update the document
+  document.title = title;
+  document.slug = newSlug;
+  document.content = content;
+  await document.save();
+  
+  // If slug changed, delete the old document
+  if (oldSlug !== newSlug && oldSlug) {
     try {
-      await fs.unlink(oldFilePath);
+      // We've already updated the document with a new slug, 
+      // so we don't need to delete anything in MongoDB
+      // The old slug is simply no longer used
     } catch (error) {
-      console.error('Error deleting old document:', error);
+      console.error('Error updating document:', error);
     }
   }
   
@@ -92,12 +94,11 @@ export async function updateDocument(oldSlug: string, title: string, content: st
 
 export async function deleteDocument(slug: string): Promise<boolean> {
   try {
-    const filePath = path.join(DOCUMENTS_DIR, `${slug}.html`);
-    await fs.unlink(filePath);
-    return true;
+    await dbConnect();
+    const result = await DocumentModel.deleteOne({ slug });
+    return result.deletedCount > 0;
   } catch (error) {
     console.error('Error deleting document:', error);
     return false;
   }
 }
-
